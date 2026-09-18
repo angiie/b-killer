@@ -106,11 +106,13 @@ jobs:
           set -euo pipefail
           ZIP="BatteryKiller-$TAG.zip"
           DMG="BatteryKiller-$TAG.dmg"
-          # 手动补发时 Release 已经存在，这时改为追加附件，重复执行也不会失败
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$ZIP" "$DMG" --clobber
+          # 先尝试创建；已存在时 create 会失败，改为追加并覆盖同名附件。
+          # 这样两种情形都成立，重复执行也不会报错。
+          if gh release create "$TAG" "$ZIP" "$DMG" \
+               --title "BatteryKiller $TAG" \
+               --generate-notes 2>/dev/null; then
+            echo "已创建 Release $TAG"
           else
-            gh release create "$TAG" "$ZIP" "$DMG" \
-              --title "BatteryKiller $TAG" \
-              --generate-notes
+            echo "Release $TAG 已存在，改为上传附件"
+            gh release upload "$TAG" "$ZIP" "$DMG" --clobber
           fi
