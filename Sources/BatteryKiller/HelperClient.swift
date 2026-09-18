@@ -41,11 +41,14 @@ enum HelperError: LocalizedError {
 ///
 /// 主程序以登录用户身份运行，无权写 AppleSMC，所有需要 root 的电源操作都通过
 /// 与助手之间的一条 Unix socket 连接完成。助手协议只有固定几条指令，
-/// 不接受任何参数化输入，因此这条连接能被滥用的范围仅限于“切换一次电源来源”。
+/// 指令后仅可跟一个语言标记（zh / en，白名单），因此这条连接能被滥用的范围
+/// 仅限于“切换一次电源来源”。
 enum HelperClient {
 
     /// 协议版本，必须与助手内的常量一致；不一致说明应用包内的助手比已安装的新
-    static let protocolVersion = 1
+    ///
+    /// 版本 2 起每条指令都带一个语言标记，助手据此回传对应语言的错误文案。
+    static let protocolVersion = 2
 
     /// 助手标识，同时决定 socket 路径与系统内的安装路径
     static let label = "com.bkiller.batterykiller.helper"
@@ -108,6 +111,16 @@ enum HelperClient {
         try waitUntilReady()
     }
 
+    /// 把指令与当前语言拼成一行完整请求
+    ///
+    /// 每条指令都带上语言，助手因此无需保存状态，也就不会出现
+    /// 「界面已切语言、助手仍用旧语言回传错误」的窗口期。
+    /// - Parameter command: 指令文本，不含换行
+    /// - Returns: 以换行结尾的请求正文
+    private static func commandWithLanguage(_ command: String) -> String {
+        "\(command) \(AppLanguage.current.rawValue)\n"
+    }
+
     /// 发送一条指令并返回去掉成功前缀后的回复内容
     /// - Parameter command: 指令文本，不含换行
     /// - Returns: 助手的回复正文
@@ -133,7 +146,7 @@ enum HelperClient {
             throw HelperError.communication(String(cString: strerror(code)))
         }
 
-        let request = Array((command + "\n").utf8)
+        let request = Array(commandWithLanguage(command).utf8)
         guard request.withUnsafeBufferPointer({ write(fd, $0.baseAddress, $0.count) }) == request.count else {
             throw HelperError.communication(L10n.commandSendFailed)
         }

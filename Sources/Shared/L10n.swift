@@ -1,17 +1,24 @@
 import Foundation
 
 /// 界面语言
-enum AppLanguage {
+enum AppLanguage: String {
     /// 中文
-    case chinese
+    case chinese = "zh"
     /// 英文
-    case english
+    case english = "en"
 
-    /// 当前生效的语言：系統首选语言以 zh 开头用中文，其余一律英文
-    static let current: AppLanguage = {
-        let preferred = Locale.preferredLanguages.first ?? "en"
-        return preferred.hasPrefix("zh") ? .chinese : .english
-    }()
+    /// 由系统首选语言推导出的语言：以 zh 开头用中文，其余一律英文
+    ///
+    /// 主程序未收到用户手动选择、以及助手进程尚未收到请求时都用它。
+    static var systemDefault: AppLanguage {
+        (Locale.preferredLanguages.first ?? "en").hasPrefix("zh") ? .chinese : .english
+    }
+
+    /// 当前生效的语言
+    ///
+    /// 主程序侧由 LanguageStore 维护；助手侧由每次请求携带的语言更新，
+    /// 因此两者始终一致，助手回传的错误文案不会与界面语言不符。
+    static var current: AppLanguage = .systemDefault
 }
 
 /// 界面与错误提示文案
@@ -45,6 +52,9 @@ enum L10n {
 
     /// 循环区间上限说明
     static var upperBoundLabel: String { pick("停充上限", "Charge Ceiling") }
+
+    /// 语言切换按钮与菜单项的文字：显示点击后会切换到的语言
+    static var languageSwitch: String { pick("English", "中文") }
 
     /// 供电状态：正在充电
     static var powerCharging: String { pick("正在充电", "Charging") }

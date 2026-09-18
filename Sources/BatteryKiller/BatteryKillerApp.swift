@@ -1,7 +1,10 @@
 import SwiftUI
 
-/// 全局单例容器：让应用委托与 SwiftUI 视图共享同一个循环引擎
+/// 全局单例容器：让应用委托与 SwiftUI 视图共享同一个循环引擎与语言设置
 enum AppState {
+    /// 语言设置：初始化时读取持久化的语言选择并应用到文案表
+    static let language = LanguageStore.shared
+
     /// 充放电循环引擎
     static let engine = CycleEngine()
 }
@@ -19,6 +22,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     /// 启动时挂上状态栏图标
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 先让语言设置生效，再建界面与菜单，避免首帧用错语言
+        _ = AppState.language
+
         menuBar = MenuBarController(
             engine: AppState.engine,
             onShowWindow: { [weak self] in self?.showMainWindow() },

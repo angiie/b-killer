@@ -6,6 +6,9 @@ struct ContentView: View {
     /// 充放电循环引擎
     @ObservedObject var engine: CycleEngine
 
+    /// 语言设置；切换后本视图的文案会重新求值
+    @ObservedObject private var languageStore = AppState.language
+
     var body: some View {
         VStack(spacing: 18) {
             batteryReadout
@@ -109,9 +112,24 @@ struct ContentView: View {
         }
     }
 
-    /// 页脚：作者联系方式
+    /// 页脚：作者联系方式与语言切换
     private var contactFooter: some View {
-        Link("@angiie_inside", destination: URL(string: "https://x.com/angiie_inside")!)
+        HStack(spacing: 14) {
+            Link("@angiie_inside", destination: URL(string: "https://x.com/angiie_inside")!)
+                .font(.caption)
+            languageButton
+        }
+    }
+
+    /// 语言切换按钮，文字为点击后会切换到的语言
+    private var languageButton: some View {
+        Button(action: { languageStore.toggle() }) {
+            HStack(spacing: 3) {
+                Image(systemName: "globe")
+                Text(L10n.languageSwitch)
+            }
             .font(.caption)
+        }
+        .buttonStyle(.borderless)
     }
 }

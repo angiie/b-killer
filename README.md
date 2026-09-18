@@ -5,7 +5,7 @@
 ![Release](https://img.shields.io/github/v/release/angiie/b-killer)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013%2B%20Apple%20Silicon-black)
 
-![BatteryKiller 主界面](screenshot/ScreenShot_2026-09-18_134954_914.png)
+![BatteryKiller 主界面（中文）](screenshot/ScreenShot_2026-09-18_134954_914.png)
 
 ---
 
@@ -28,7 +28,7 @@ BatteryKiller 是一个 macOS 菜单栏小工具，用软件方式控制 MacBook
 | 循环区间滑杆 | 双滑块选择下限与上限，刻度附近自动吸附到 5 / 10 / 20 / 30 与 80 / 90 / 100 这些常用值；循环运行中锁定，避免中途改区间造成状态错乱 |
 | 实时状态 | 大号电量百分比 + 供电状态（正在充电 / 已插电未充电 / 使用电池供电）+ 当前阶段说明 |
 | 菜单栏常驻 | 图标随供电方式切换（适配器 / 电池两种配色），菜单里可直接开关循环、切换电源、唤出窗口、退出 |
-| 中英双语界面 | 跟随系统语言：中文环境显示中文，其余一律英文，界面文案与错误提示全部本地化 |
+| 中英双语界面 | 默认跟随系统语言（中文环境中文，其余英文），也可在主界面页脚或菜单栏菜单里手动切换，选择会被记住。界面文案、错误提示、以及特权助手回传的错误文案都会同步切换 |
 | 防空闲睡眠 | 循环运行期间申请电源断言，避免机器睡过去导致循环卡死 |
 | 退出兜底 | 退出应用前自动恢复墙上供电，不会把机器留在断电状态 |
 
@@ -71,7 +71,7 @@ macOS 没有公开的「断开充电器」API，实际开关在 AppleSMC 固件�
 于是把写入拆到一个独立进程 `bkhelper`：
 
 - 由 `launchd` 以 root 常驻拉起，**装机时授权一次即可长期使用**，不会每次操作都弹密码框；
-- 对外协议刻意做到最小：一行指令、一行回复，只有 `VERSION` / `STATUS` / `ON` / `OFF` 四条固定指令，不接受任何参数化输入。即使 socket 被本机其他进程连接，最坏情况也只是被切换一次电源来源；
+- 对外协议刻意做到最小：一行指令、一行回复，只有 `VERSION` / `STATUS` / `ON` / `OFF` 四条固定指令，指令后仅可跟一个语言标记（`zh` / `en` 白名单），由主程序每次请求携带。即使 socket 被本机其他进程连接，最坏情况也只是被切换一次电源来源；
 - 每次请求新建一次 SMC 连接，避免开机时 SMC 尚未就绪导致长连接失效；
 - 写入后立即读回比对并校验，因为 SMC 固件存在「谎报成功」的情况。
 
@@ -99,6 +99,7 @@ Sources/
 │   ├── BatteryKillerApp.swift   应用入口、窗口与退出兜底
 │   ├── MenuBarController.swift  状态栏图标与菜单
 │   ├── ContentView.swift        主界面
+│   ├── LanguageStore.swift      界面语言设置（持久化 + 通知刷新）
 │   ├── CycleEngine.swift        循环状态机
 │   ├── BatteryMonitor.swift     IOKit 读电池
 │   ├── AdapterControl.swift     适配器开关（CHIE）
@@ -180,12 +181,15 @@ rm -rf /Applications/BatteryKiller.app
 
 - 实测环境为 M1 / 固件 18000.161.10 / macOS 26.6.2。`.plist` 里的 `LSMinimumSystemVersion` 是 13.0，但**只有在 `CHIE` 键存在且可写**的机型上才能工作；其他机型启动后会在界面提示「本机不支持软件控制电源适配器」（该判断只读 SMC 元信息，不需要 root，因此不会白弹一次授权框）。
 - **应用没有 Apple 开发者签名，也没有公证，Release 里的包是 ad-hoc 签名。**因此首次打开必须右键 → 打开，或先执行 `xattr -rd com.apple.quarantine /Applications/BatteryKiller.app` 解除隔离。这是本项目的现状而非安装出错；每次更新版本后都要再做一次。
+- 从早期版本升级时，助手协议版本已提升到 2（指令携带语言标记），因此升级后第一次点「自动循环」或电源切换会再弹一次管理员授权，用于把助手重装成新版本。这是一次性的。
 - 基于 SMC 私有键，系统固件更新后行为可能变化，风险自负。
 - 参考了 [batt](https://github.com/charlie0129/batt) 的思路，但实现与协议都是独立写的。
 
 ---
 
 ## English
+
+![BatteryKiller main window (English)](screenshot/en.png)
 
 ### What it is
 
@@ -204,7 +208,7 @@ It exists for this situation: a MacBook that stays plugged in as a desktop. Left
 | Cycle range slider | Two handles pick the lower and upper bounds, snapping to 5 / 10 / 20 / 30 and 80 / 90 / 100 near those ticks. Locked while the cycle runs so the range cannot change mid-cycle |
 | Live status | Large charge percentage plus the power state (charging / plugged in but idle / running on battery) and the current cycle phase |
 | Menu bar presence | The icon follows the power source (adapter vs. battery artwork). The menu offers cycle toggle, power switch, show window and quit |
-| Bilingual UI | Follows the system language: Chinese locales get Chinese, everything else gets English. Both UI strings and error messages are localized |
+| Bilingual UI | Follows the system language by default (Chinese locales get Chinese, everything else English), and can be switched manually from the window footer or the menu bar menu; the choice is remembered. UI strings, error messages, and the error text relayed by the privileged helper all follow the switch |
 | Sleep guard | A power assertion is held while cycling, so the Mac does not idle-sleep and freeze the loop |
 | Safe exit | The adapter is restored on quit, so the Mac is never left unplugged by accident |
 
@@ -247,7 +251,7 @@ Measured behaviour: a non-root process can open the AppleSMC connection and read
 So all writes live in a separate process, `bkhelper`:
 
 - `launchd` starts it as root and keeps it alive, so the **one authorization happens at install time** instead of on every action;
-- the wire protocol is deliberately minimal: one line in, one line out, only four fixed commands (`VERSION` / `STATUS` / `ON` / `OFF`) with no parameterized input. Even if another local process connects to the socket, the worst it can do is flip the power source once;
+- the wire protocol is deliberately minimal: one line in, one line out, only four fixed commands (`VERSION` / `STATUS` / `ON` / `OFF`), optionally followed by a language tag (`zh` / `en`, whitelisted) that the app sends with every request. Even if another local process connects to the socket, the worst it can do is flip the power source once;
 - each request opens a fresh SMC connection, so a connection established before SMC is ready at boot cannot go stale;
 - every write is read back and verified, because the SMC firmware does sometimes report success without applying the change.
 
@@ -275,6 +279,7 @@ Sources/
 │   ├── BatteryKillerApp.swift   entry point, window and exit handling
 │   ├── MenuBarController.swift  status icon and menu
 │   ├── ContentView.swift        main window
+│   ├── LanguageStore.swift      UI language setting (persistence + refresh)
 │   ├── CycleEngine.swift        cycle state machine
 │   ├── BatteryMonitor.swift     battery reads via IOKit
 │   ├── AdapterControl.swift     adapter switch (CHIE)
@@ -356,6 +361,7 @@ rm -rf /Applications/BatteryKiller.app
 
 - Verified on M1 / firmware 18000.161.10 / macOS 26.6.2. `LSMinimumSystemVersion` is 13.0, but the app only works on machines where the `CHIE` key exists and is writable. On anything else it reports "This Mac does not support software control of the power adapter" at launch — that probe only reads SMC metadata, needs no root, and therefore never triggers a pointless authorization prompt.
 - **The app has no Apple Developer signature and is not notarized; release builds are ad-hoc signed.** So the first launch needs a right-click → Open, or `xattr -rd com.apple.quarantine /Applications/BatteryKiller.app` first. That is the state of the project, not a broken download — and it applies again after every update.
+- Upgrading from an earlier version asks for the administrator password once more on the first "Auto Cycle" or power switch, because the helper protocol moved to version 2 (requests now carry a language tag) and the helper must be reinstalled. That prompt is one-off.
 - Built on a private SMC key, so a firmware update may change the behaviour. Use at your own risk.
 - Inspired by [batt](https://github.com/charlie0129/batt); the implementation and protocol here are written independently.
 

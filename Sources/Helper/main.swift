@@ -7,12 +7,14 @@ import Foundation
 ///
 /// 设计取舍：
 ///   - 由 launchd 以 root 常驻拉起，装机一次即可长期使用，不需要反复授权；
-///   - 对外协议刻意做到最小：一行指令、一行回复，不接受任何参数化输入，
-///     暴露面仅“查状态 / 接通 / 切断”三件事；
+///   - 对外协议刻意做到最小：一行指令、一行回复，暴露面仅「查状态 / 接通 / 切断」三件事；
+///     指令后可跟一个语言标记（zh / en，白名单），只用于决定回传文案的语言，不构成新的攻击面；
 ///   - 每次请求新建 SMC 连接，避免开机时 SMC 尚未就绪导致长连接失效。
 
 /// 协议版本。主程序据此判断应用包内的助手是否比已安装的新，需要重装
-let helperProtocolVersion = 1
+///
+/// 版本 2 起指令携带语言标记，版本 1 的助手会因版本不一致被自动重装。
+let helperProtocolVersion = 2
 
 /// 默认 socket 路径
 let defaultSocketPath = "/var/run/com.bkiller.batterykiller.helper.sock"
@@ -34,21 +36,29 @@ func log(_ message: String) {
 }
 
 /// 处理一条请求
-/// - Parameter command: 请求文本，不含换行
+/// - Parameter command: 请求文本，不含换行，格式为「指令 [语言标记]」
 /// - Returns: 以 "OK" 开头表示成功、以 "ERR" 开头表示失败
 func handle(_ command: String) -> String {
-    switch command {
+    let parts = command.split(separator: " ").map(String.init)
+
+    // 语言标记只用于决定回传文案的语言；取值非法或缺失时沿用上一次，不影响指令本身
+    if parts.count > 1, let language = AppLanguage(rawValue: parts[1]) {
+        AppLanguage.current = language
+    }
+
+    switch parts.first ?? "" {
     case "VERSION":
         return "OK \(helperProtocolVersion)"
     case "STATUS", "ON", "OFF":
+        let action = parts[0]
         let adapter = AdapterControl()
         do {
             try adapter.open()
             defer { adapter.close() }
-            if command == "STATUS" {
+            if action == "STATUS" {
                 return try adapter.isEnabled() ? "OK ON" : "OK OFF"
             }
-            try adapter.setEnabled(command == "ON")
+            try adapter.setEnabled(action == "ON")
             return "OK"
         } catch {
             return "ERR \(error.localizedDescription)"
