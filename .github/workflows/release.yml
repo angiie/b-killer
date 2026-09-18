@@ -1,0 +1,54 @@
+name: Release
+
+# 推送 v* 标签即构建 .app 并创建 GitHub Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # macos-14 是 arm64 运行器，与 build.sh 里的 arm64-apple-macos13.0 目标一致
+    runs-on: macos-14
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 显示构建环境
+        run: |
+          sw_vers
+          swiftc --version
+
+      - name: 构建 .app
+        run: bash build.sh
+
+      - name: 校验产物
+        run: |
+          set -euo pipefail
+          APP=build/BatteryKiller.app
+          test -x "$APP/Contents/MacOS/BatteryKiller"
+          test -x "$APP/Contents/MacOS/bkhelper"
+          test -f "$APP/Contents/Library/LaunchDaemons/com.bkiller.batterykiller.helper.plist"
+          # 主程序与助手都是 ad-hoc 签名，这里确认包结构完整、签名自洽
+          codesign --verify --deep --strict "$APP"
+          codesign --verify --strict "$APP/Contents/MacOS/bkhelper"
+
+      - name: 打包 zip
+        run: |
+          set -euo pipefail
+          # 用 ditto 而不是 zip：只有它能把 .app 的签名与扩展属性一起带过去
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/BatteryKiller.app "BatteryKiller-${GITHUB_REF_NAME}.zip"
+
+      - name: 创建 Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" \
+            "BatteryKiller-${GITHUB_REF_NAME}.zip" \
+            --title "BatteryKiller ${GITHUB_REF_NAME}" \
+            --generate-notes
