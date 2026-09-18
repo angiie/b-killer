@@ -49,7 +49,30 @@ final class CycleEngine: ObservableObject {
     /// 初始化：常驻轮询电量，保证未开启循环时界面也显示真实读数
     init() {
         refreshStatus()
+        verifyAdapterSupport()
         startTimer()
+    }
+
+    /// 启动时确认本机硬件支持软件控制适配器
+    ///
+    /// 读 SMC 键元信息不需要 root，所以能在请求授权安装助手之前先做判断，
+    /// 避免在不支持的机器上弹出无意义的授权对话框。
+    private func verifyAdapterSupport() {
+        guard !AdapterControl.isSupported() else { return }
+        errorText = "本机不支持软件控制电源适配器"
+    }
+
+    /// 执行一次适配器开关
+    /// - Parameters:
+    ///   - enabled: true 接通墙上供电，false 切断改用电池
+    ///   - interactive: 是否由用户直接触发；只有用户主动操作时才允许弹出授权安装对话框
+    private func applyAdapter(enabled: Bool, interactive: Bool) throws {
+        if !HelperClient.isReady() {
+            // 后台循环里弹授权框会打断用户，因此只做提示不做安装
+            guard interactive else { throw HelperError.notInstalled }
+            try HelperClient.install()
+        }
+        try HelperClient.setAdapterEnabled(enabled)
     }
 
     /// 手动切换供电来源：当前用直流电源就切到电池，反之切回直流电源
@@ -62,7 +85,7 @@ final class CycleEngine: ObservableObject {
         // 判定依据是当前供电状态：插着电说明正在用直流电源
         let switchToBattery = isPluggedIn
         do {
-            try BattController.apply(switchToBattery ? .disableAdapter : .enableAdapter)
+            try applyAdapter(enabled: !switchToBattery, interactive: true)
         } catch {
             errorText = error.localizedDescription
             refreshStatus()
@@ -86,16 +109,13 @@ final class CycleEngine: ObservableObject {
         let currentLevel = level
 
         do {
-            // 先解除 batt 自身的限充（默认 60%），避免它跟本循环的区间抢控制权
-            try BattController.apply(.allowFullCharge)
-
             if currentLevel >= highThreshold {
                 // 已在上限之上：直接断电开始放电
-                try BattController.apply(.disableAdapter)
+                try applyAdapter(enabled: false, interactive: true)
                 phase = .discharging
             } else {
                 // 未到上限：确保供电正常开始充电（顺带清掉上次残留的断电状态）
-                try BattController.apply(.enableAdapter)
+                try applyAdapter(enabled: true, interactive: true)
                 phase = .charging
             }
         } catch {
@@ -126,8 +146,10 @@ final class CycleEngine: ObservableObject {
     }
 
     /// 退出应用前调用，避免把机器留在断电状态
+    ///
+    /// 直接调助手不触发安装：应用正在退出，此时弹授权框只会挡住退出流程。
     func restoreAdapterOnExit() {
-        try? BattController.apply(.enableAdapter)
+        try? HelperClient.setAdapterEnabled(true)
     }
 
     /// 启动轮询定时器（用 common 模式，界面交互时不中断）
@@ -170,7 +192,7 @@ final class CycleEngine: ObservableObject {
             if level >= highThreshold {
                 // 到达上限 → 切断墙上供电，让电池开始真实放电
                 do {
-                    try BattController.apply(.disableAdapter)
+                    try applyAdapter(enabled: false, interactive: false)
                     phase = .discharging
                     errorText = nil
                 } catch {
@@ -182,7 +204,7 @@ final class CycleEngine: ObservableObject {
             if level <= lowThreshold {
                 // 到达下限 → 恢复供电，重新开始充电
                 do {
-                    try BattController.apply(.enableAdapter)
+                    try applyAdapter(enabled: true, interactive: false)
                     phase = .charging
                     errorText = nil
                 } catch {
@@ -230,7 +252,7 @@ final class CycleEngine: ObservableObject {
     /// 恢复墙上供电，失败只记录不抛出
     private func restoreAdapter() {
         do {
-            try BattController.apply(.enableAdapter)
+            try applyAdapter(enabled: true, interactive: false)
             // IOPS 的供电标志有数秒刷新延迟，先就地更新，避免停止后仍显示“使用电池供电”
             isPluggedIn = true
             errorText = nil

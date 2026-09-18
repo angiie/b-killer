@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.bkiller.batterykiller.helper</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/PrivilegedHelperTools/com.bkiller.batterykiller.helper</string>
+        <string>--socket</string>
+        <string>/var/run/com.bkiller.batterykiller.helper.sock</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <!-- Interactive 可避免系统把常驻进程降级调度，导致响应变慢 -->
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/com.bkiller.batterykiller.helper.log</string>
+    <key>StandardOutPath</key>
+    <string>/var/log/com.bkiller.batterykiller.helper.log</string>
+</dict>
+</plist>

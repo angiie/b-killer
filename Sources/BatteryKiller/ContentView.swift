@@ -111,9 +111,7 @@ struct ContentView: View {
 
     /// 页脚：作者联系方式
     private var contactFooter: some View {
-        Text("onlyangiie@gmail.com")
+        Link("@angiie_inside", destination: URL(string: "https://x.com/angiie_inside")!)
             .font(.caption)
-            .foregroundStyle(.tertiary)
-            .textSelection(.enabled)
     }
 }

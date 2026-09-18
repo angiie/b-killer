@@ -27,6 +27,22 @@
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>Library/LaunchDaemons/com.bkiller.batterykiller.helper.plist</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			i6kJdt/yTxz6Ca9CfgGyBrNKga0BxaU11zjq+QcVyD8=
+			</data>
+		</dict>
+		<key>MacOS/bkhelper</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			HY9siP3FHr/wAXgVPK84KYjlbcw=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"1d8f6c88fdc51ebff00178153caf382988e56dcc"</string>
+		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>
