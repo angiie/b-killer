@@ -89,7 +89,7 @@ graph TD
     F -->|"电量 ≤ 下限"| D
 ```
 
-判定频率上做了取舍：界面电量每 5 秒刷新一次，但状态机判定最小间隔为 30 分钟——电量变化本来就慢，频繁判定只会白耗电。
+判定与轮询同频：电量每 5 秒读一次，状态机也跟着每 5 秒判一次，电量越过阈值后一个周期内就会切断或恢复供电。两侧是各自独立的阈值（上限切断、下限恢复），来回穿越同一阈值也不会抖动。
 
 #### 5. 文件结构
 
@@ -274,7 +274,7 @@ graph TD
     F -->|"charge ≤ lower bound"| D
 ```
 
-The polling rates are deliberately split: the UI refreshes the charge every 5 seconds, while the state machine only evaluates every 30 minutes. The charge moves slowly, so evaluating more often would just waste power.
+Evaluation runs at the same cadence as polling: the charge is read every 5 seconds and the state machine evaluates on the same tick, so crossing a bound cuts or restores power within one cycle. The two bounds are separate thresholds (cut at the upper, restore at the lower), so a charge hovering at one of them cannot flap.
 
 #### 5. Layout
 

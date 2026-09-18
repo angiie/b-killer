@@ -35,12 +35,8 @@ final class CycleEngine: ObservableObject {
     /// 区间上限：升到这个电量就切断供电
     @Published var highThreshold: Int = 100
 
-    /// 界面刷新间隔（秒）：只影响电量读数与状态的显示
-    private let uiRefreshInterval: TimeInterval = 5
-    /// 控制判定最小间隔（秒）：电量变化缓慢，无需频繁判断，半小时一次足够
-    private let controlMinInterval: TimeInterval = 30 * 60
-    /// 上次执行控制判定的时刻
-    private var lastControlCheck = Date.distantPast
+    /// 轮询间隔（秒）：电量读数、界面显示与状态机判定共用这个节奏
+    private let pollInterval: TimeInterval = 5
     /// 轮询定时器
     private var timer: Timer?
     /// 防睡眠断言 ID，0 表示未持有
@@ -125,8 +121,6 @@ final class CycleEngine: ObservableObject {
 
         errorText = nil
         isRunning = true
-        // 起始阶段已经在上面确定好，从此刻起重新计算下一次判定的时间
-        lastControlCheck = Date()
         acquireSleepAssertion()
     }
 
@@ -155,7 +149,7 @@ final class CycleEngine: ObservableObject {
     /// 启动轮询定时器（用 common 模式，界面交互时不中断）
     private func startTimer() {
         timer?.invalidate()
-        let newTimer = Timer(timeInterval: uiRefreshInterval, repeats: true) { [weak self] _ in
+        let newTimer = Timer(timeInterval: pollInterval, repeats: true) { [weak self] _ in
             self?.tick()
         }
         RunLoop.main.add(newTimer, forMode: .common)
@@ -175,15 +169,13 @@ final class CycleEngine: ObservableObject {
         return true
     }
 
-    /// 一次轮询：界面读数每次都刷新；状态机按较低频率判定，未开启时只刷新
+    /// 一次轮询：每轮都刷新界面读数，循环运行时再顺带做一次状态机判定
     private func tick() {
         guard refreshStatus() else { return }
         guard isRunning else { return }
 
-        // 电量变化缓慢，判定不必跟着界面刷新走；这里做频率限制以降低无谓的功耗与打扰
-        guard Date().timeIntervalSince(lastControlCheck) >= controlMinInterval else { return }
-        lastControlCheck = Date()
-
+        // 判定与轮询同频：阈值上不做频率限制，电量越界后一个轮询周期内就会动作。
+        // 两侧是各自独立的阈值（上限切断、下限恢复），来回穿越同一阈值也不会抖动。
         switch phase {
         case .idle:
             return
