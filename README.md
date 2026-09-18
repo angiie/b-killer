@@ -13,9 +13,9 @@
 
 ### 这是什么
 
-BatteryKiller 是一个 macOS 菜单栏小工具，用软件方式控制 MacBook 的**电源适配器通断**，从而让电池在指定电量区间内自动充放电循环，也可以一键在「电池供电」与「直流电源供电」之间切换。
+BatteryKiller 是一个 macOS 菜单栏小工具，用软件方式控制 MacBook 的**电源适配器通断**，让电池在指定电量区间内真的放电、真的充电，来回循环；也可以一键在「电池供电」与「直流电源供电」之间切换。
 
-它解决的是这类场景：MacBook 长期插着电当台式机用，原厂逻辑会让电量一直顶在 100%，电池长期处于满电高压状态，容易鼓包、掉健康度。BatteryKiller 让电量在例如 5%–80% 之间往返，避免长期满电，同时避免完全没电。
+**它不保护电池，恰好相反：它的用途就是消耗电池。** 每切断一次适配器让电池放电、再充回来，都在消耗电池的循环次数、加速老化——名字就是字面意思。它面向的是这类需求：你就是想把这台机器的电池玩坏、想把循环数刷上去，或者需要在真机上又快又可控地把电耗掉。想要延长电池寿命的话，这个工具不是给你用的。
 
 > 适用机型：Apple Silicon（arm64）、macOS 13 及以上。**不支持 Intel Mac**（构建目标就是 arm64）。
 
@@ -198,9 +198,9 @@ rm -rf /Applications/BatteryKiller.app
 
 ### What it is
 
-BatteryKiller is a macOS menu bar utility that switches the MacBook **power adapter on and off in software**, so the battery can cycle inside a range you choose. It can also flip between battery and DC power with one click.
+BatteryKiller is a macOS menu bar utility that switches the MacBook **power adapter on and off in software**, so the battery genuinely discharges and genuinely recharges, cycling back and forth inside a range you choose. It can also flip between battery and DC power with one click.
 
-It exists for this situation: a MacBook that stays plugged in as a desktop. Left alone, macOS keeps it pinned at 100%, which means the battery sits at full charge and high voltage for months. BatteryKiller keeps it bouncing between, say, 5% and 80% instead.
+**It does not protect your battery — it exists to wear it out.** Every time the adapter is cut and the battery discharges and recharges, cycle count is consumed and the cell ages faster. The name is literal. It is for the case where you *want* to kill the battery in this machine, push the cycle count up, or need to drain a real Mac quickly and controllably. If you are after longer battery life, this is not the tool for you.
 
 > Requirements: Apple Silicon (arm64), macOS 13 or later. **Intel Macs are not supported** — the build target is arm64.
 
