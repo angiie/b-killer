@@ -59,7 +59,7 @@ final class CycleEngine: ObservableObject {
     /// 避免在不支持的机器上弹出无意义的授权对话框。
     private func verifyAdapterSupport() {
         guard !AdapterControl.isSupported() else { return }
-        errorText = "本机不支持软件控制电源适配器"
+        errorText = L10n.adapterUnsupported
     }
 
     /// 执行一次适配器开关
@@ -166,7 +166,7 @@ final class CycleEngine: ObservableObject {
     @discardableResult
     private func refreshStatus() -> Bool {
         guard let snapshot = BatteryMonitor.snapshot() else {
-            errorText = "无法读取电池状态"
+            errorText = L10n.batteryReadFailed
             return false
         }
         level = snapshot.level
@@ -218,11 +218,11 @@ final class CycleEngine: ObservableObject {
     var statusText: String {
         switch phase {
         case .idle:
-            return "已停止"
+            return L10n.cycleStopped
         case .charging:
-            return "充电中，等待升到 \(highThreshold)%"
+            return L10n.cycleCharging(to: highThreshold)
         case .discharging:
-            return "已停止充电，放电中，等待降到 \(lowThreshold)%"
+            return L10n.cycleDischarging(to: lowThreshold)
         }
     }
 
@@ -230,7 +230,7 @@ final class CycleEngine: ObservableObject {
     private func acquireSleepAssertion() {
         guard sleepAssertionID == 0 else { return }
         var assertionID: IOPMAssertionID = 0
-        let reason = "维持充放电循环，防止空闲睡眠导致循环中断" as CFString
+        let reason = L10n.sleepAssertionReason as CFString
         let result = IOPMAssertionCreateWithName(
             kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
             IOPMAssertionLevel(kIOPMAssertionLevelOn),

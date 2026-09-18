@@ -21,19 +21,19 @@ enum SMCError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .serviceUnavailable:
-            return "无法连接 AppleSMC 服务"
+            return L10n.smcServiceUnavailable
         case .openFailed(let code):
-            return "打开 AppleSMC 失败：0x\(hex(code))"
+            return L10n.smcOpenFailed(hex(code))
         case .callFailed(let key, let code):
-            return "SMC 调用失败（\(key)）：0x\(hex(code))"
+            return L10n.smcCallFailed(key, hex(code))
         case .keyNotFound(let key):
-            return "SMC 键 \(key) 不存在"
+            return L10n.smcKeyNotFound(key)
         case .unexpectedSize(let key, let expected, let actual):
-            return "SMC 键 \(key) 数据长度异常：期望 \(expected) 字节，实际 \(actual) 字节"
+            return L10n.smcUnexpectedSize(key, expected: expected, actual: actual)
         case .deviceError(let key, let code):
-            return "SMC 键 \(key) 返回错误码 \(code)"
+            return L10n.smcDeviceError(key, code)
         case .notPrivileged(let key):
-            return "写入 SMC 键 \(key) 需要管理员权限"
+            return L10n.smcNotPrivileged(key)
         }
     }
 

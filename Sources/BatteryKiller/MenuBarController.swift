@@ -59,13 +59,13 @@ final class MenuBarController {
 
     /// 配置菜单：显示窗口 + 自动循环开关 + 手动切换 + 退出
     private func configureMenu() {
-        let showItem = NSMenuItem(title: "显示窗口", action: #selector(showWindow), keyEquivalent: "")
+        let showItem = NSMenuItem(title: L10n.menuShowWindow, action: #selector(showWindow), keyEquivalent: "")
         showItem.target = self
         menu.addItem(showItem)
 
         menu.addItem(.separator())
 
-        autoCycleItem.title = "自动循环"
+        autoCycleItem.title = L10n.autoCycle
         autoCycleItem.action = #selector(toggleAutoCycle)
         autoCycleItem.target = self
         menu.addItem(autoCycleItem)
@@ -76,7 +76,7 @@ final class MenuBarController {
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "退出 BatteryKiller", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -115,7 +115,7 @@ final class MenuBarController {
 
     /// 「手动切换」项标题提示点击后会切到哪一边
     private func updateSwitchItemTitle(isPluggedIn: Bool) {
-        switchPowerItem.title = isPluggedIn ? "切换到电池供电" : "切换到直流电源"
+        switchPowerItem.title = isPluggedIn ? L10n.menuSwitchToBattery : L10n.menuSwitchToAdapter
     }
 
     /// 菜单项：唤出主窗口

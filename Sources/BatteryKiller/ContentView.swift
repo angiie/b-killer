@@ -33,9 +33,9 @@ struct ContentView: View {
 
     /// 供电状态描述
     private var powerDescription: String {
-        if engine.isCharging { return "正在充电" }
-        if engine.isPluggedIn { return "已插电，未充电" }
-        return "使用电池供电"
+        if engine.isCharging { return L10n.powerCharging }
+        if engine.isPluggedIn { return L10n.powerPluggedIdle }
+        return L10n.powerOnBattery
     }
 
     /// 自动循环开关：打开即自动执行，按滑杆区间反复充放电
@@ -44,7 +44,7 @@ struct ContentView: View {
             get: { engine.isRunning },
             set: { isOn in isOn ? engine.start() : engine.stop() }
         )) {
-            Text("自动循环")
+            Text(L10n.autoCycle)
         }
         .toggleStyle(.switch)
     }
@@ -52,7 +52,7 @@ struct ContentView: View {
     /// 手动切换供电来源
     private var powerSwitchButton: some View {
         Button(action: { engine.switchPowerSource() }) {
-            Text("电池 / 直流电源 切换")
+            Text(L10n.switchPowerButton)
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
@@ -65,7 +65,7 @@ struct ContentView: View {
     private var thresholdPicker: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("循环区间")
+                Text(L10n.cycleRange)
                 Spacer()
                 Text("\(engine.lowThreshold)% – \(engine.highThreshold)%")
                     .monospacedDigit()
@@ -80,9 +80,9 @@ struct ContentView: View {
                 isDisabled: engine.isRunning
             )
             HStack {
-                Text("放电下限")
+                Text(L10n.lowerBoundLabel)
                 Spacer()
-                Text("停充上限")
+                Text(L10n.upperBoundLabel)
             }
             .font(.caption)
             .foregroundStyle(.tertiary)

@@ -25,6 +25,7 @@ swiftc -O -o "$TOOLS_DIR/GenerateIcons" "$ROOT/tools/GenerateIcons.swift" -frame
 "$TOOLS_DIR/GenerateIcons" "$ROOT/icons" "$APP_DIR/Contents/Resources"
 
 # 特权助手：与主程序共用 SMC 访问层，以 root 常驻，负责需要权限的 SMC 写入
+# L10n 也要编进来：助手的错误文案会回传给主程序显示在界面上
 swiftc -O \
     -target arm64-apple-macos13.0 \
     -import-objc-header "$SHIM_HEADER" \
@@ -33,6 +34,7 @@ swiftc -O \
     "$ROOT/Sources/BatteryKiller/SMC.swift" \
     "$ROOT/Sources/BatteryKiller/AdapterControl.swift" \
     "$ROOT/Sources/BatteryKiller/UnixSocket.swift" \
+    "$ROOT/Sources/Shared/L10n.swift" \
     "$ROOT/Sources/Helper/main.swift"
 
 # launchd 描述文件：主程序在首次授权时把它复制到 /Library/LaunchDaemons 并拉起
@@ -69,6 +71,7 @@ swiftc -O -parse-as-library \
     -import-objc-header "$SHIM_HEADER" \
     -framework SwiftUI -framework AppKit -framework IOKit \
     -o "$APP_DIR/Contents/MacOS/$APP_NAME" \
+    "$ROOT/Sources/Shared/L10n.swift" \
     "$ROOT"/Sources/BatteryKiller/*.swift
 
 cp "$ROOT/Resources/Info.plist" "$APP_DIR/Contents/Info.plist"

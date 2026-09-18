@@ -10,11 +10,11 @@ enum AdapterError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedHardware:
-            return "本机不支持软件控制电源适配器"
+            return L10n.adapterUnsupported
         case .verifyFailed(let expected, let actual):
             let expectedText = expected.map { String(format: "%02X", $0) }.joined()
             let actualText = actual.map { String(format: "%02X", $0) }.joined()
-            return "适配器状态写入未生效：期望 \(expectedText)，实际 \(actualText)"
+            return L10n.adapterVerifyFailed(expected: expectedText, actual: actualText)
         }
     }
 }

@@ -20,19 +20,19 @@ enum HelperError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notInstalled:
-            return "电源控制组件尚未安装，请重新开启一次并完成授权"
+            return L10n.helperNotInstalled
         case .bundleIncomplete:
-            return "应用包内缺少电源控制组件，请重新构建应用"
+            return L10n.helperBundleIncomplete
         case .authorizationCancelled:
-            return "已取消授权，电源控制不可用"
+            return L10n.helperAuthorizationCancelled
         case .installFailed(let detail):
-            return "安装电源控制组件失败：\(detail)"
+            return L10n.helperInstallFailed(detail)
         case .startTimeout:
-            return "电源控制组件启动超时，请稍后重试"
+            return L10n.helperStartTimeout
         case .operationFailed(let detail):
-            return "电源控制失败：\(detail)"
+            return L10n.helperOperationFailed(detail)
         case .communication(let detail):
-            return "无法与电源控制组件通讯：\(detail)"
+            return L10n.helperCommunication(detail)
         }
     }
 }
@@ -113,7 +113,7 @@ enum HelperClient {
     /// - Returns: 助手的回复正文
     private static func send(_ command: String) throws -> String {
         let fd = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard fd >= 0 else { throw HelperError.communication("无法创建 socket") }
+        guard fd >= 0 else { throw HelperError.communication(L10n.socketCreateFailed) }
         defer { close(fd) }
 
         var timeout = socketTimeout
@@ -121,7 +121,7 @@ enum HelperClient {
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
 
         guard var address = UnixSocket.address(for: socketPath) else {
-            throw HelperError.communication("socket 路径过长")
+            throw HelperError.communication(L10n.socketPathTooLong)
         }
         let connectResult = UnixSocket.withSockaddr(&address) { pointer, length in
             connect(fd, pointer, length)
@@ -135,7 +135,7 @@ enum HelperClient {
 
         let request = Array((command + "\n").utf8)
         guard request.withUnsafeBufferPointer({ write(fd, $0.baseAddress, $0.count) }) == request.count else {
-            throw HelperError.communication("指令发送失败")
+            throw HelperError.communication(L10n.commandSendFailed)
         }
 
         var buffer = [UInt8](repeating: 0, count: 128)
@@ -148,14 +148,14 @@ enum HelperClient {
         }
 
         guard received > 0, let text = String(bytes: buffer[0..<received], encoding: .utf8) else {
-            throw HelperError.communication("助手没有响应")
+            throw HelperError.communication(L10n.helperNoResponse)
         }
         let reply = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if reply.hasPrefix("ERR") {
             throw HelperError.operationFailed(reply.dropFirst(3).trimmingCharacters(in: .whitespaces))
         }
         guard reply.hasPrefix("OK") else {
-            throw HelperError.communication("无法识别的回复：\(reply)")
+            throw HelperError.communication(L10n.unexpectedReply(reply))
         }
         return reply.dropFirst(2).trimmingCharacters(in: .whitespaces)
     }

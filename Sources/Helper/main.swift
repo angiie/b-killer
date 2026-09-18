@@ -54,7 +54,7 @@ func handle(_ command: String) -> String {
             return "ERR \(error.localizedDescription)"
         }
     default:
-        return "ERR 不支持的指令"
+        return "ERR \(L10n.unsupportedCommand)"
     }
 }
 
