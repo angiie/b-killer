@@ -1,10 +1,16 @@
 name: Release
 
-# 推送 v* 标签即构建 .app 并创建 GitHub Release
+# 推送 v* 标签即构建 .app、打出 zip 与 dmg 并创建 GitHub Release
+# 也可在 Actions 页面手动指定一个已存在的标签，为它补发产物（重复执行不会报错）
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '已存在的标签，例如 v1.1.0'
+        required: true
 
 permissions:
   contents: write
@@ -16,6 +22,24 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          # 手动触发时检出指定标签，否则检出触发本次运行的标签
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: 解析版本
+        id: version
+        env:
+          # 经环境变量传递而不是直接插值，标签里出现特殊字符时不会进入 shell 语法
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "本次发布的版本：$TAG"
 
       - name: 显示构建环境
         run: |
@@ -37,18 +61,56 @@ jobs:
           codesign --verify --strict "$APP/Contents/MacOS/bkhelper"
 
       - name: 打包 zip
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
           # 用 ditto 而不是 zip：只有它能把 .app 的签名与扩展属性一起带过去
           ditto -c -k --sequesterRsrc --keepParent \
-            build/BatteryKiller.app "BatteryKiller-${GITHUB_REF_NAME}.zip"
+            build/BatteryKiller.app "BatteryKiller-$TAG.zip"
 
-      - name: 创建 Release
+      - name: 打包 dmg
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
-          gh release create "$GITHUB_REF_NAME" \
-            "BatteryKiller-${GITHUB_REF_NAME}.zip" \
-            --title "BatteryKiller ${GITHUB_REF_NAME}" \
-            --generate-notes
+          DMG="BatteryKiller-$TAG.dmg"
+          MOUNT=/tmp/bk-dmg-mount
+
+          # 同样用 ditto 复制，保留 .app 的签名与扩展属性
+          rm -rf dist "$MOUNT"
+          mkdir -p dist/stage "$MOUNT"
+          ditto build/BatteryKiller.app dist/stage/BatteryKiller.app
+          # 镜像里放一个 /Applications 快捷方式，用户打开后把 app 拖进去即可
+          ln -s /Applications dist/stage/Applications
+
+          # UDZO 是压缩只读格式，兼容性最好
+          hdiutil create -volname "BatteryKiller" \
+            -srcfolder dist/stage -ov -format UDZO "$DMG"
+
+          # 镜像必须真能挂上、app 在里面、签名仍然自洽，否则这个附件等于废品
+          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT"
+          ls -la "$MOUNT"
+          test -x "$MOUNT/BatteryKiller.app/Contents/MacOS/BatteryKiller"
+          codesign --verify --deep --strict "$MOUNT/BatteryKiller.app"
+          hdiutil detach "$MOUNT"
+
+          rm -rf "$MOUNT" dist
+          ls -lh "$DMG"
+
+      - name: 创建或更新 Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ZIP="BatteryKiller-$TAG.zip"
+          DMG="BatteryKiller-$TAG.dmg"
+          # 手动补发时 Release 已经存在，这时改为追加附件，重复执行也不会失败
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" "$DMG" --clobber
+          else
+            gh release create "$TAG" "$ZIP" "$DMG" \
+              --title "BatteryKiller $TAG" \
+              --generate-notes
+          fi

@@ -115,7 +115,10 @@ Sources/
 
 ### 安装与使用
 
-1. 到 [Releases](https://github.com/angiie/b-killer/releases) 下载最新的 `BatteryKiller-vX.Y.Z.zip`，解压后把 `BatteryKiller.app` 拖进「应用程序」。
+1. 到 [Releases](https://github.com/angiie/b-killer/releases) 下载最新的安装包，两种格式任选：
+
+   - **`BatteryKiller-vX.Y.Z.dmg`**：双击打开，把 `BatteryKiller` 拖进旁边的「应用程序」
+   - **`BatteryKiller-vX.Y.Z.zip`**：解压后把 `BatteryKiller.app` 拖进「应用程序」
 2. **首次打开会被 Gatekeeper 拦下**：本项目没有 Apple 开发者签名，也没有做公证，直接双击会提示「无法打开，因为 Apple 无法检查其是否包含恶意软件」。
 
    两种解法任选其一：
@@ -160,12 +163,14 @@ bash build.sh            # 产物：build/BatteryKiller.app
 
 ### 发布新版本
 
-打标签推上去即可，GitHub Actions（[release.yml](.github/workflows/release.yml)）会在 `macos-14` 运行器上自动构建、校验签名、用 `ditto` 打成 zip 并创建 Release：
+打标签推上去即可，GitHub Actions（[release.yml](.github/workflows/release.yml)）会在 `macos-14` 运行器上自动构建、校验签名与镜像可用性，用 `ditto` 打出 zip、用 `hdiutil` 打出 dmg，并创建 Release：
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
+
+需要给某个已发布的版本补发产物时，在 Actions 页面手动触发 Release 工作流并填入该标签即可；重复执行不会报错，附件会被覆盖更新。
 
 ### 卸载
 
@@ -295,7 +300,10 @@ Sources/
 
 ### Install and use
 
-1. Grab the latest `BatteryKiller-vX.Y.Z.zip` from [Releases](https://github.com/angiie/b-killer/releases) and drag `BatteryKiller.app` into Applications.
+1. Grab the latest build from [Releases](https://github.com/angiie/b-killer/releases), in either format:
+
+   - **`BatteryKiller-vX.Y.Z.dmg`**: open it and drag `BatteryKiller` onto the Applications shortcut next to it
+   - **`BatteryKiller-vX.Y.Z.zip`**: unzip and drag `BatteryKiller.app` into Applications
 2. **The first launch is blocked by Gatekeeper**: this project has no Apple Developer signature and is not notarized, so double-clicking reports "Apple cannot check it for malicious software".
 
    Pick either fix:
@@ -340,12 +348,14 @@ bash build.sh            # output: build/BatteryKiller.app
 
 ### Releasing
 
-Push a tag and let GitHub Actions ([release.yml](.github/workflows/release.yml)) build on a `macos-14` runner, verify the signature, zip with `ditto` and create the release:
+Push a tag and let GitHub Actions ([release.yml](.github/workflows/release.yml)) build on a `macos-14` runner, verify the signature and the mounted image, zip with `ditto`, build a dmg with `hdiutil`, and create the release:
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
+
+To attach artifacts to an already published version, run the Release workflow manually from the Actions tab and pass that tag. Re-running is safe — the assets are replaced.
 
 ### Uninstall
 
