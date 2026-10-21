@@ -65,6 +65,12 @@ enum L10n {
     /// 供电状态：使用电池
     static var powerOnBattery: String { pick("使用电池供电", "Running on battery") }
 
+    /// 电池循环次数指标标题
+    static var cycleCountLabel: String { pick("循环次数", "Cycle Count") }
+
+    /// 电池健康度指标标题
+    static var batteryHealthLabel: String { pick("电池健康度", "Battery Health") }
+
     // MARK: - 循环状态
 
     /// 循环未运行

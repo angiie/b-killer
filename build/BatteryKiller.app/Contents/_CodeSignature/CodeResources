@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/AppIcon.icns</key>
 		<data>
-		nPpApLqX48dAyueZZGWjzNIimUo=
+		lY4LIv7lForUUL7Ye1SYD7QcOUA=
 		</data>
 		<key>Resources/status-adapter.png</key>
 		<data>
@@ -38,16 +38,16 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			DGiqgqjziIr/FKbAa8udxTYIJB4=
+			9tL8lFLf2qAggUcuSRcfvJov1y4=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"0c68aa82a8f3888aff14a6c06bcb9dc53608241e"</string>
+			<string>cdhash H"f6d2fc9452dfdaa02081472e49171fbc9a2fd72e"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			RWqFiqsmPsQnbWxEaEG6kv2w48Ku0VdLrKzLcNL5mcI=
+			ZVBlqAfOlOS3ToWIJTI3/CeGSEsQp01lFH3sflsTG7E=
 			</data>
 		</dict>
 		<key>Resources/status-adapter.png</key>

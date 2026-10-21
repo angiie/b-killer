@@ -27,6 +27,7 @@ BatteryKiller 是一个 macOS 菜单栏小工具，用软件方式控制 MacBook
 | 手动切换 | 一个按钮在「电池供电 / 直流电源供电」之间切换，按下即终止正在运行的循环 |
 | 循环区间滑杆 | 双滑块选择下限与上限，刻度附近自动吸附到 5 / 10 / 20 / 30 与 80 / 90 / 100 这些常用值；循环运行中锁定，避免中途改区间造成状态错乱 |
 | 实时状态 | 大号电量百分比 + 供电状态（正在充电 / 已插电未充电 / 使用电池供电）+ 当前阶段说明 |
+| 电池明细 | 主界面显示循环次数与健康度（满容量占设计容量的比例，与系统「最大容量」口径一致），随电量每 5 秒一起刷新 |
 | 菜单栏常驻 | 图标随供电方式切换（适配器 / 电池两种配色），菜单里可直接开关循环、切换电源、唤出窗口、退出 |
 | 中英双语界面 | 默认跟随系统语言（中文环境中文，其余英文），也可在主界面页脚或菜单栏菜单里手动切换，选择会被记住。界面文案、错误提示、以及特权助手回传的错误文案都会同步切换 |
 | 防空闲睡眠 | 循环运行期间申请电源断言，避免机器睡过去导致循环卡死 |
@@ -41,7 +42,7 @@ BatteryKiller 是一个 macOS 菜单栏小工具，用软件方式控制 MacBook
 graph TD
     A["主程序 BatteryKiller<br/>SwiftUI · 登录用户身份"] --> B["CycleEngine<br/>循环状态机"]
     A --> C["MenuBarController<br/>状态栏图标与菜单"]
-    B --> D["BatteryMonitor<br/>IOKit 读电量"]
+    B --> D["BatteryMonitor<br/>IOKit 读电量与电池信息"]
     B --> E["HelperClient<br/>Unix socket 客户端"]
     E -->|"VERSION / STATUS / ON / OFF"| F["bkhelper<br/>launchd 以 root 常驻"]
     F --> G["AdapterControl"]
@@ -101,7 +102,7 @@ Sources/
 │   ├── ContentView.swift        主界面
 │   ├── LanguageStore.swift      界面语言设置（持久化 + 通知刷新）
 │   ├── CycleEngine.swift        循环状态机
-│   ├── BatteryMonitor.swift     IOKit 读电池
+│   ├── BatteryMonitor.swift     IOKit 读电池电量、循环次数与健康度
 │   ├── AdapterControl.swift     适配器开关（CHIE）
 │   ├── SMC.swift                AppleSMC 用户客户端
 │   ├── HelperClient.swift       助手客户端与安装器
@@ -212,6 +213,7 @@ BatteryKiller is a macOS menu bar utility that switches the MacBook **power adap
 | Manual switch | One button toggles between battery power and DC power; pressing it stops a running cycle first |
 | Cycle range slider | Two handles pick the lower and upper bounds, snapping to 5 / 10 / 20 / 30 and 80 / 90 / 100 near those ticks. Locked while the cycle runs so the range cannot change mid-cycle |
 | Live status | Large charge percentage plus the power state (charging / plugged in but idle / running on battery) and the current cycle phase |
+| Battery details | The main window shows the cycle count and health (full capacity over design capacity, consistent with the system's "Maximum Capacity" reading), refreshed with the charge every 5 seconds |
 | Menu bar presence | The icon follows the power source (adapter vs. battery artwork). The menu offers cycle toggle, power switch, show window and quit |
 | Bilingual UI | Follows the system language by default (Chinese locales get Chinese, everything else English), and can be switched manually from the window footer or the menu bar menu; the choice is remembered. UI strings, error messages, and the error text relayed by the privileged helper all follow the switch |
 | Sleep guard | A power assertion is held while cycling, so the Mac does not idle-sleep and freeze the loop |
@@ -226,7 +228,7 @@ In one sentence: **read the charge through IOKit, control the adapter through th
 graph TD
     A["BatteryKiller.app<br/>SwiftUI · runs as the logged-in user"] --> B["CycleEngine<br/>cycle state machine"]
     A --> C["MenuBarController<br/>status icon & menu"]
-    B --> D["BatteryMonitor<br/>reads charge via IOKit"]
+    B --> D["BatteryMonitor<br/>reads charge & battery info via IOKit"]
     B --> E["HelperClient<br/>Unix socket client"]
     E -->|"VERSION / STATUS / ON / OFF"| F["bkhelper<br/>kept alive by launchd as root"]
     F --> G["AdapterControl"]
@@ -286,7 +288,7 @@ Sources/
 │   ├── ContentView.swift        main window
 │   ├── LanguageStore.swift      UI language setting (persistence + refresh)
 │   ├── CycleEngine.swift        cycle state machine
-│   ├── BatteryMonitor.swift     battery reads via IOKit
+│   ├── BatteryMonitor.swift     charge, cycle count and health reads via IOKit
 │   ├── AdapterControl.swift     adapter switch (CHIE)
 │   ├── SMC.swift                AppleSMC user client
 │   ├── HelperClient.swift       helper client and installer

@@ -28,6 +28,10 @@ final class CycleEngine: ObservableObject {
     @Published private(set) var isPluggedIn = false
     /// 是否正在充电
     @Published private(set) var isCharging = false
+    /// 电池循环次数，读取失败时为 nil
+    @Published private(set) var cycleCount: Int?
+    /// 电池健康度（0-100），读取失败时为 nil
+    @Published private(set) var batteryHealth: Int?
     /// 错误提示，为空表示正常
     @Published private(set) var errorText: String? = nil
     /// 区间下限：降到这个电量就恢复供电
@@ -166,6 +170,8 @@ final class CycleEngine: ObservableObject {
         level = snapshot.level
         isPluggedIn = snapshot.isPluggedIn
         isCharging = snapshot.isCharging
+        cycleCount = snapshot.cycleCount
+        batteryHealth = snapshot.healthPercent
         return true
     }
 

@@ -12,6 +12,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 18) {
             batteryReadout
+            batteryMetrics
             autoToggle
             powerSwitchButton
             thresholdPicker
@@ -32,6 +33,48 @@ struct ContentView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    /// 电池明细：循环次数与健康度，随轮询一起刷新
+    private var batteryMetrics: some View {
+        HStack(spacing: 0) {
+            metricTile(title: L10n.cycleCountLabel, value: metricText(engine.cycleCount))
+            Rectangle()
+                .fill(Color.secondary.opacity(0.18))
+                .frame(width: 1, height: 28)
+            metricTile(title: L10n.batteryHealthLabel, value: metricText(engine.batteryHealth, suffix: "%"))
+        }
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.secondary.opacity(0.08))
+        )
+    }
+
+    /// 单个指标：上方小标题，下方数值
+    /// - Parameters:
+    ///   - title: 指标名称
+    ///   - value: 已格式化好的数值
+    private func metricTile(title: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// 指标数值格式化：读不到时显示破折号
+    /// - Parameters:
+    ///   - value: 原始数值
+    ///   - suffix: 单位后缀，例如百分号
+    private func metricText(_ value: Int?, suffix: String = "") -> String {
+        guard let value else { return "—" }
+        return "\(value)\(suffix)"
     }
 
     /// 供电状态描述
